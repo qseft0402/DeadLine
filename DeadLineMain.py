@@ -52,14 +52,15 @@ class DeadLine:
         self.showText=tk.Text(self.win,yscrollcommand=scrollbar.set)
         self.showText.grid(row=3, column=1, columnspan=2, rowspan=1)
 
-        self.label_AWen = tk.Label(self.win, text="DeadLine Program Make by AWen 2021/3/28 v1.1", font=tkFont.Font(family="Lucida Grande", size=9)).grid(row=5, column=2,columnspan=2)
+        self.label_AWen = tk.Label(self.win, text="DeadLine Program Make by AWen 2021/3/28 v1.2", font=tkFont.Font(family="Lucida Grande", size=9)).grid(row=5, column=2,columnspan=2)
         self.btn_fix = tk.Button(self.win, text='更新紀錄', command=self.btn_updateList, font=fontStyle).grid(
             row=5, column=0)
         self.win.mainloop()
 
     def btn_updateList(self):
         mb.showinfo("更新紀錄",
-            """-----------------------\n更新日期:2021/4/5\n更新版本:v1.1\n更新內容:修正輸入月份格式問題\n新增PermissionError問題\n-----------------------
+            """-----------------------\n更新日期:2021/4/10\n更新版本:v1.2\n更新內容:新增可補充數性功能
+-----------------------\n更新日期:2021/4/5\n更新版本:v1.1\n更新內容:修正輸入月份格式問題\n新增PermissionError問題\n-----------------------
             """)
 
     def btn_input_getFileName(self):
@@ -89,11 +90,16 @@ class DeadLine:
             df = pd.read_excel(self.inputPath)
             # excel = pd.ExcelFile("test.xlsx")
             # print(excel.sheet_names)
-            colName=df.columns
+            self.colName=df.columns
 
             for index, row in df.iterrows():
-                m=re.search('[1-12]*',str(row[colName[0]]))
-                self.getDeadLine(int(m.group(0)), row[colName[1]])
+                tempList = []
+                for name in self.colName:
+                    tempList.append(row[name])
+
+                m=re.search('[1-12]*',str(tempList[0]))
+
+                self.getDeadLine(int(m.group(0)), row[self.colName[1]],tempList[2:len(self.colName)])
 
             mb.showinfo("確認", "已轉換", detail="請於\"輸出檔案路徑\"確認檔案")
             print(df)
@@ -102,7 +108,7 @@ class DeadLine:
             mb.showerror("錯誤!", "輸入框錯誤", detail="請確認\"輸入檔案路徑\"是否正確")
         except PermissionError:
             mb.showerror("錯誤!", "請先關閉輸出檔案!", detail="關閉所有excel檔案重試一次")
-    def getDeadLine(self,month,days):
+    def getDeadLine(self,month,days,dataList):
 
 
         ans=""
@@ -136,11 +142,13 @@ class DeadLine:
                 ans = '{0} 月 {1} 日'.format(int(self.getDeadMonth(month,mCount)), int(daysTemp))
             print(mCount)
             print(daysTemp)
-        self.ansList .append([str(month), days,self.ansYear-1911,ans ])
+        self.ansList .append([str(month), days]+dataList+[self.ansYear-1911,ans])
         print(str(self.ansYear)+"年 "+ans)
         self.showText.insert(tk.END, str(int(month))+"月"+str(int(days))+"日 => "+str(self.ansYear)+"年 "+ans+'\n')
+        print(self.ansList)
+        print(self.colName[2:-1])
         ansDF = pd.DataFrame(self.ansList ,
-                   columns=['月份', '天數','兌現日期(年)','兌現日期'])
+                   columns=['月份', '天數']+list(self.colName[2:len(self.colName)])+['兌現日期(年)','兌現日期'])
         ansDF.to_excel(str(self.entry_output.get()))
 
 
@@ -180,3 +188,4 @@ class DeadLine:
 DeadLine()
 
 
+#pyinstaller -F -w DeadLineMain.py
